@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate , login , logout
 from django.http import HttpResponseRedirect,HttpResponse
 from accounts.models import Cart 
-# Create your views here.
 from .models import Profile
 from products.models import *
 from accounts.models import Cart , CartItems,SizeVariant
@@ -13,7 +12,34 @@ from django.http import HttpResponseRedirect
 
 
 def login_page(request):
-    return render(request,'accounts/login.html')
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        user_obj = User.objects.filter(username = email)
+
+
+        if not user_obj.exists():
+            messages.warning(request, "Account not found")
+            return HttpResponseRedirect(request.path_info)
+        
+
+        
+        if not user_obj[0].profile.is_email_verified():
+            messages.warning(request, "Your account is not verified.")
+            return HttpResponseRedirect(request.path_info)
+        
+        
+        user_obj =authenticate(username = email, password= password)
+        if user_obj:
+            login(request , user_obj)
+            return redirect('/')
+
+
+        messages.warning(request, "Invalid Credentails")
+        return HttpResponseRedirect(request.path_info)
+    
+    return render(request , 'accounta/login.html')
 
 def register_page(request):
 
@@ -68,6 +94,38 @@ def add_to_cart(request , uid):
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
+def remove_cart(request , cart_item_uid):
+    try:
+         cart_item =CartItems.objects.get(uid = cart_item_uid)
+         cart_item.delete()
+    except Exception as e:
+        print(e)
+    
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
 def cart(request):
-    context = {'cart': Cart.objects.get(is_paid = False , user = request.user)}
+    cart_obj= Cart.objects.get(is_paid = False , user = request.user)
+    if request.method == 'POST':
+        coupon = request.POST.get('coupon')
+        coupon_obj =Coupon.objects.filter(coupon_code__icontains = coupon)
+        if not coupon_obj.exists():
+            messages.warning(request , 'Invalid Coupon.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        
+        if cart_obj.coupon:
+            messages.warning(request , 'Coupon already Exist')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        
+        cart_obj.coupon = coupon_obj[0]
+        cart_obj.save()
+        messages.warning(request , 'Coupon applied')
+       
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+
+
+
+
+
+    context={'cart' : cart_obj}
     return render(request ,'accounts/cart.html' , context)
