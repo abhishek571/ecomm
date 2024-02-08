@@ -12,7 +12,7 @@ from django.http import HttpResponseRedirect
 
 
 def login_page(request):
-    
+     
     if request.method == 'POST':
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -39,7 +39,7 @@ def login_page(request):
         messages.warning(request, "Invalid Credentails")
         return HttpResponseRedirect(request.path_info)
     
-    return render(request , 'accounta/login.html')
+    return render(request , 'accounts/login.html')
 
 def register_page(request):
 
@@ -116,9 +116,18 @@ def cart(request):
             messages.warning(request , 'Coupon already Exist')
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
         
+        if cart_obj.get_cart_total() < coupon_obj[0].minimum_amount:
+            messages.warning(request , f'Amount should be greater than {coupon_obj[0].minimum_amount}.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        
+
+        if coupon_obj[0].is_expired:
+            messages.warning(request , f'Coupon expired.')
+            return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        
         cart_obj.coupon = coupon_obj[0]
         cart_obj.save()
-        messages.warning(request , 'Coupon applied')
+        messages.success(request , 'Coupon applied')
        
         return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
@@ -129,3 +138,12 @@ def cart(request):
 
     context={'cart' : cart_obj}
     return render(request ,'accounts/cart.html' , context)
+
+
+def remove_coupon(request , cart_id):
+    cart= Cart.objects.get(uid= cart_id)
+    cart.coupon=None
+    cart.save()
+    messages.success(request , 'Coupon Removed')
+       
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))

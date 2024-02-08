@@ -20,9 +20,9 @@
                             <tr>
                                 <td>
                                     <figure class="itemside">
-                                        <div class="aside"><img src="/media/{{cart_item.product.product_images.first.image }}"></div>
+                                        <div class="aside"><img src="/media/{{cart_item.product.product_images.first.image }}" style="max-width: 100px;"></div>
                                         <figcaption class="info">
-                                            <a href="#" class="title text-dark">Some name of item goes here nice</a>
+                                            <a href="#" class="title text-dark" style="font-size: smaller;">Some name of item goes here nice</a>
                                             {% if cart_item.size_variant %}
                                             <p class="text-muted small">Size: {{cart_item.size_variant.size_name}}<br> Brand: Gucci</p>
                                             {% endif %}
@@ -63,7 +63,7 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <form method="POST">
-                            <!-- {% include "base/alert.html" %} -->
+                            {% include "base/alert.html" %}
                             {% csrf_token %}
                             <div class="form-group">
                                 <label>Have coupon?</label>
@@ -74,6 +74,9 @@
                                     </span>
                                 </div>
                             </div>
+                            {% if cart.coupon %}
+                            <a href="{% url 'remove_coupon' cart.uid %}" class="btn btn-success">{{ cart.coupon.coupon_code}}</a>
+                            {% endif %}
                         </form>
                     </div>
                 </div>
